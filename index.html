@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Family Hub</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Georgia', serif; background: #f2ede8; color: #264653; min-height: 100vh; }
+
+    /* Grain */
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-repeat: repeat; background-size: 200px; }
+
+    header { position: sticky; top: 0; z-index: 10; background: #264653; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+      box-shadow: 0 2px 16px rgba(38,70,83,0.2); }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { font-size: 28px; }
+    .logo-title { font-size: 20px; font-weight: 700; color: #e9c46a; }
+    .logo-sub { font-size: 11px; color: #a8dadc; margin-top: 2px; }
+    nav { display: flex; gap: 6px; flex-wrap: wrap; }
+    nav button { padding: 6px 13px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.15);
+      background: transparent; color: #a8dadc; cursor: pointer; font-size: 13px; font-family: inherit; }
+    nav button.active { background: #e9c46a; color: #264653; border-color: #e9c46a; font-weight: 700; }
+
+    main { max-width: 700px; margin: 0 auto; padding: 20px 16px 60px; position: relative; z-index: 1; }
+
+    .toast { position: fixed; top: 70px; right: 16px; z-index: 100; padding: 12px 18px;
+      border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 300px; display: none; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 18px; }
+    .stat { background: #fff; border-radius: 12px; padding: 12px 8px; text-align: center;
+      box-shadow: 0 2px 8px rgba(38,70,83,0.07); }
+    .stat-val { font-size: 26px; font-weight: 800; line-height: 1; }
+    .stat-label { font-size: 10px; color: #7a9aaa; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
+    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-bar button { padding: 5px 12px; border-radius: 16px; border: 1.5px solid #c8d8dd;
+      background: #fff; color: #4a7a8a; cursor: pointer; font-size: 12px; font-family: inherit; }
+    .filter-bar button.active { background: #264653; color: #e9c46a; border-color: #264653; font-weight: 700; }
+
+    .add-btn { display: block; width: 100%; padding: 13px; background: #e76f51; color: #fff;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
+      margin-bottom: 14px; font-family: inherit; box-shadow: 0 4px 12px rgba(231,111,81,0.3); }
+
+    .card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 4px 16px rgba(38,70,83,0.08); margin-bottom: 16px; }
+    .card-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #264653; }
+
+    input, textarea, select { display: block; width: 100%; padding: 10px 13px; border-radius: 10px;
+      border: 1.5px solid #d6e0e5; font-size: 14px; font-family: inherit; margin-bottom: 10px;
+      outline: none; background: #f8fafb; color: #264653; }
+    textarea { min-height: 70px; resize: vertical; }
+
+    .priority-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .priority-row button { flex: 1; padding: 8px; border-radius: 10px; border: 2px solid #e0e8ec;
+      background: #f8fafb; cursor: pointer; font-size: 13px; font-family: inherit; }
+    .priority-row button.active-urgent { background: #fff0f1; border-color: #e63946; color: #e63946; font-weight: 700; }
+    .priority-row button.active-normal { background: #fff8f0; border-color: #f4a261; color: #f4a261; font-weight: 700; }
+    .priority-row button.active-low    { background: #f0faf9; border-color: #2a9d8f; color: #2a9d8f; font-weight: 700; }
+
+    .submit-btn { display: block; width: 100%; padding: 12px; background: #264653; color: #e9c46a;
+      border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task-card { background: #fff; border-radius: 12px; padding: 14px 16px;
+      box-shadow: 0 2px 10px rgba(38,70,83,0.07); border-left: 4px solid #ccc; }
+    .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .task-meta { display: flex; gap: 8px; align-items: center; }
+    .badge { padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .task-age { font-size: 11px; color: #9ab0b8; }
+    .task-actions { display: flex; gap: 5px; }
+    .icon-btn { width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 15px; display: flex; align-items: center; justify-content: center; color: #264653; }
+    .task-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .task-desc { font-size: 13px; color: #4a7a8a; margin-bottom: 6px; line-height: 1.5; }
+    .task-footer { font-size: 11px; color: #9ab0b8; }
+
+    .member-row { display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(38,70,83,0.07); margin-bottom: 8px; }
+
+    .section-title { font-size: 19px; font-weight: 800; margin-bottom: 12px; color: #264653; }
+    .help-text { font-size: 13px; color: #4a7a8a; line-height: 1.8; margin-bottom: 10px; }
+    .empty { text-align: center; color: #9ab0b8; padding: 40px 0; font-size: 14px; }
+
+    .debug-box { margin-top: 14px; background: #f8fafb; border-radius: 10px; padding: 14px; border: 1px solid #e0e8ec; }
+    .debug-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .debug-line { font-size: 11px; font-family: monospace; margin-bottom: 4px; word-break: break-all; }
+
+    footer { text-align: center; padding: 16px; font-size: 11px; color: #9ab0b8; position: relative; z-index: 1; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🏠</span>
+    <div>
+      <div class="logo-title">Family Hub</div>
+      <div class="logo-sub" id="header-sub">0 members · 0 pending</div>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="switchView('tasks')">📋 Tasks</button>
+    <button onclick="switchView('members')">👨‍👩‍👧 Members</button>
+    <button onclick="switchView('settings')">⚙️ Settings</button>
+  </nav>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<main>
+
+  <!-- TASKS VIEW -->
+  <div id="view-tasks">
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val" id="stat-total" style="color:#264653">0</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-val" id="stat-pending" style="color:#e76f51">0</div><div class="stat-label">Pending</div></div>
+      <div class="stat"><div class="stat-val" id="stat-urgent" style="color:#e63946">0</div><div class="stat-label">Urgent</div></div>
+      <div class="stat"><div class="stat-val" id="stat-done" style="color:#2a9d8f">0</div><div class="stat-label">Done</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="active" onclick="setFilter('all',this)">All</button>
+      <button onclick="setFilter('pending',this)">⏳ Pending</button>
+      <button onclick="setFilter('done',this)">✅ Done</button>
+      <button onclick="setFilter('Urgent',this)">🔴 Urgent</button>
+      <button onclick="setFilter('Normal',this)">🟡 Normal</button>
+      <button onclick="setFilter('Low',this)">🟢 Low</button>
+    </div>
+
+    <button class="add-btn" onclick="toggleForm()">+ Add New Task</button>
+
+    <div class="card hidden" id="task-form">
+      <div class="card-title">New Task</div>
+      <input type="text" id="f-title" placeholder="Task title *" />
+      <textarea id="f-desc" placeholder="Description (optional)"></textarea>
+      <div class="priority-row">
+        <button class="active-urgent" onclick="setPriority('Urgent',this)">🔴 Urgent</button>
+        <button onclick="setPriority('Normal',this)">🟡 Normal</button>
+        <button onclick="setPriority('Low',this)">🟢 Low</button>
+      </div>
+      <input type="text" id="f-addedby" placeholder="Your name *" />
+      <button class="submit-btn" onclick="addTask()">Submit Task & Notify Family</button>
+    </div>
+
+    <div class="task-list" id="task-list"></div>
+  </div>
+
+  <!-- MEMBERS VIEW -->
+  <div id="view-members" class="hidden">
+    <div class="section-title">Family Members</div>
+    <div class="card">
+      <div class="card-title">Add Member</div>
+      <input type="text" id="m-name" placeholder="Full name" />
+      <input type="email" id="m-email" placeholder="Email address" />
+      <button class="submit-btn" onclick="addMember()">Add Member</button>
+    </div>
+    <div id="member-list"></div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div id="view-settings" class="hidden">
+    <div class="section-title">EmailJS Keys</div>
+    <div class="card">
+      <p class="help-text">Your keys are saved in this app. Template must have <code>{{to_email}}</code> in the To field, and <code>{{to_name}}</code> <code>{{subject}}</code> <code>{{message}}</code> <code>{{added_by}}</code> in the body.</p>
+    </div>
+
+    <div class="section-title">Test Reminders</div>
+    <div class="card">
+      <p class="help-text">Sends to all members for all pending tasks right now. Shows exact response from EmailJS.</p>
+      <button class="submit-btn" onclick="sendTestReminders()">🔔 Send Test Reminder Emails Now</button>
+      <div class="debug-box hidden" id="debug-box">
+        <div class="debug-title">📋 Debug Log</div>
+        <div id="debug-lines"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Auto Reminder Logic</div>
+    <div class="card">
+      <p class="help-text">Auto reminders fire for tasks older than 1 day, once per day. They run every hour while this page is open.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>Family Hub · Data saved on this device</footer>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const EMAILJS_SERVICE_ID  = "service_tnkv17r";
+const EMAILJS_TEMPLATE_ID = "template_7x7kjk0";
+const EMAILJS_PUBLIC_KEY  = "-uQhea5f5cg7mvnJG";
+
+const PRIORITY_CONFIG = {
+  Urgent: { color: "#e63946", bg: "#fff0f1", icon: "🔴" },
+  Normal: { color: "#f4a261", bg: "#fff8f0", icon: "🟡" },
+  Low:    { color: "#2a9d8f", bg: "#f0faf9", icon: "🟢" },
+};
+
+// ── State ────────────────────────────────────────────────────────────────────
+let tasks   = JSON.parse(localStorage.getItem("fh_tasks")   || "[]");
+let members = JSON.parse(localStorage.getItem("fh_members") || "[]");
+let remLog  = JSON.parse(localStorage.getItem("fh_remlog")  || "{}");
+let currentFilter   = "all";
+let currentPriority = "Urgent";
+let formOpen = false;
+
+function persist() {
+  localStorage.setItem("fh_tasks",   JSON.stringify(tasks));
+  localStorage.setItem("fh_members", JSON.stringify(members));
+  localStorage.setItem("fh_remlog",  JSON.stringify(remLog));
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function genId() { return Math.random().toString(36).slice(2,10); }
+function daysSince(d) { return Math.floor((Date.now() - new Date(d).getTime()) / 86400000); }
+function formatDate(d) { return new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type="success") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = type==="warn"?"#e76f51":type==="info"?"#457b9d":"#2a9d8f";
+  t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display="none"; }, 5000);
+}
+
+// ── EmailJS ──────────────────────────────────────────────────────────────────
+async function sendEmail(toEmail, toName, params) {
+  try {
+    const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id: EMAILJS_PUBLIC_KEY,
+        template_params: { to_email: toEmail, to_name: toName, ...params },
+      }),
+    });
+    const msg = await res.text();
+    return { ok: res.status===200, status: res.status, msg };
+  } catch(e) {
+    return { ok: false, status: 0, msg: e.message };
+  }
+}
+
+async function notifyAll(subject, message, addedBy) {
+  const results = [];
+  for (const m of members) {
+    const r = await sendEmail(m.email, m.name, { subject, message, added_by: addedBy });
+    results.push({ name: m.name, ...r });
+  }
+  return results;
+}
+
+// ── Views ────────────────────────────────────────────────────────────────────
+function switchView(v) {
+  ["tasks","members","settings"].forEach(name => {
+    document.getElementById("view-"+name).classList.toggle("hidden", name!==v);
+  });
+  document.querySelectorAll("nav button").forEach((btn,i)=>{
+    btn.classList.toggle("active", ["tasks","members","settings"][i]===v);
+  });
+  if (v==="tasks") renderTasks();
+  if (v==="members") renderMembers();
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+function toggleForm() {
+  formOpen = !formOpen;
+  document.getElementById("task-form").classList.toggle("hidden", !formOpen);
+  document.querySelector(".add-btn").textContent = formOpen ? "✕ Cancel" : "+ Add New Task";
+}
+
+let selectedPriorityBtn = null;
+function setPriority(p, btn) {
+  currentPriority = p;
+  document.querySelectorAll(".priority-row button").forEach(b=>{
+    b.className = "";
+  });
+  btn.className = "active-"+p.toLowerCase();
+}
+
+async function addTask() {
+  const title   = document.getElementById("f-title").value.trim();
+  const desc    = document.getElementById("f-desc").value.trim();
+  const addedBy = document.getElementById("f-addedby").value.trim();
+  if (!title || !addedBy) { showToast("⚠️ Title and your name are required","warn"); return; }
+
+  const task = { id: genId(), title, desc, priority: currentPriority,
+    addedBy, createdAt: new Date().toISOString(), done: false, doneAt: null };
+  tasks.unshift(task);
+  persist();
+
+  document.getElementById("f-title").value="";
+  document.getElementById("f-desc").value="";
+  document.getElementById("f-addedby").value="";
+  toggleForm();
+  renderTasks();
+
+  if (members.length > 0) {
+    showToast("📤 Notifying family…","info");
+    const results = await notifyAll(
+      `📋 New Task: "${task.title}"`,
+      `${task.addedBy} added a new task.\n\nTask: ${task.title}\nPriority: ${task.priority}${task.desc?"\nDetails: "+task.desc:""}`,
+      task.addedBy
+    );
+    const failed = results.filter(r=>!r.ok);
+    if (failed.length===0) showToast("✅ All family members notified!");
+    else showToast(`❌ Failed for: ${failed.map(r=>r.name+" ("+r.msg+")").join(", ")}`, "warn");
+  } else {
+    showToast("✅ Task added (add members to enable notifications)");
+  }
+}
+
+async function toggleDone(id) {
+  const task = tasks.find(t=>t.id===id);
+  const wasDone = task.done;
+  task.done = !task.done;
+  task.doneAt = task.done ? new Date().toISOString() : null;
+  persist();
+  renderTasks();
+  if (!wasDone && members.length > 0) {
+    await notifyAll(
+      `✅ Task Completed: "${task.title}"`,
+      `"${task.title}" has been marked as done.\n\nAdded by: ${task.addedBy}\nCompleted: ${formatDate(new Date().toISOString())}`,
+      task.addedBy
+    );
+    showToast("✅ Task done — family notified!");
+  }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t=>t.id!==id);
+  persist();
+  renderTasks();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll(".filter-bar button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderTasks();
+}
+
+function renderTasks() {
+  const pending = tasks.filter(t=>!t.done).length;
+  const urgent  = tasks.filter(t=>!t.done&&t.priority==="Urgent").length;
+  const done    = tasks.filter(t=>t.done).length;
+  document.getElementById("stat-total").textContent   = tasks.length;
+  document.getElementById("stat-pending").textContent = pending;
+  document.getElementById("stat-urgent").textContent  = urgent;
+  document.getElementById("stat-done").textContent    = done;
+  document.getElementById("header-sub").textContent   = `${members.length} member${members.length!==1?"s":""} · ${pending} pending`;
+
+  const filtered = tasks.filter(t=>{
+    if (currentFilter==="pending") return !t.done;
+    if (currentFilter==="done")    return t.done;
+    if (["Urgent","Normal","Low"].includes(currentFilter)) return t.priority===currentFilter&&!t.done;
+    return true;
+  });
+
+  const list = document.getElementById("task-list");
+  if (filtered.length===0) { list.innerHTML='<div class="empty">No tasks here.</div>'; return; }
+
+  list.innerHTML = filtered.map(task=>{
+    const p = PRIORITY_CONFIG[task.priority];
+    const age = daysSince(task.createdAt);
+    const ageStr = task.done ? `Done ${formatDate(task.doneAt)}` : age===0?"Today":`${age}d open`;
+    return `
+      <div class="task-card" style="opacity:${task.done?0.65:1};border-left-color:${p.color}">
+        <div class="task-top">
+          <div class="task-meta">
+            <span class="badge" style="background:${p.bg};color:${p.color}">${p.icon} ${task.priority}</span>
+            <span class="task-age">${ageStr}</span>
+          </div>
+          <div class="task-actions">
+            <button class="icon-btn" style="background:${task.done?"#fff0f1":"#f0faf9"}"
+              onclick="toggleDone('${task.id}')">${task.done?"↩":"✓"}</button>
+            <button class="icon-btn" style="background:#fff0f1;color:#e63946"
+              onclick="deleteTask('${task.id}')">✕</button>
+          </div>
+        </div>
+        <div class="task-title" style="text-decoration:${task.done?"line-through":"none"}">${task.title}</div>
+        ${task.desc?`<div class="task-desc">${task.desc}</div>`:""}
+        <div class="task-footer">Added by <b>${task.addedBy}</b> · ${formatDate(task.createdAt)}</div>
+      </div>`;
+  }).join("");
+}
+
+// ── Members ──────────────────────────────────────────────────────────────────
+function addMember() {
+  const name  = document.getElementById("m-name").value.trim();
+  const email = document.getElementById("m-email").value.trim();
+  if (!name||!email) { showToast("⚠️ Name and email required","warn"); return; }
+  members.push({ id: genId(), name, email });
+  persist();
+  document.getElementById("m-name").value="";
+  document.getElementById("m-email").value="";
+  renderMembers();
+  showToast(`✅ ${name} added`);
+}
+
+function deleteMember(id) {
+  members = members.filter(m=>m.id!==id);
+  persist();
+  renderMembers();
+}
+
+function renderMembers() {
+  const list = document.getElementById("member-list");
+  if (members.length===0) { list.innerHTML='<div class="empty">No members yet.</div>'; return; }
+  list.innerHTML = members.map(m=>`
+    <div class="member-row">
+      <div>
+        <div class="task-title">${m.name}</div>
+        <div class="task-footer">${m.email}</div>
+      </div>
+      <button class="icon-btn" style="background:#fff0f1;color:#e63946" onclick="deleteMember('${m.id}')">✕</button>
+    </div>`).join("");
+}
+
+// ── Test reminders ────────────────────────────────────────────────────────────
+async function sendTestReminders() {
+  const pending = tasks.filter(t=>!t.done);
+  if (members.length===0) { showToast("⚠️ Add family members first","warn"); return; }
+  if (pending.length===0) { showToast("⚠️ No pending tasks","warn"); return; }
+  showToast("📤 Sending…","info");
+
+  const lines = [];
+  for (const task of pending) {
+    const age = daysSince(task.createdAt);
+    for (const m of members) {
+      const r = await sendEmail(m.email, m.name, {
+        subject: `⏰ [TEST] Reminder: "${task.title}" is pending`,
+        message: `TEST REMINDER\n\nTask: ${task.title}\nOpen: ${age===0?"less than a day":age+" day(s)"}\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
+        added_by: task.addedBy,
+      });
+      lines.push({ text: `${m.name} (${m.email}): HTTP ${r.status} — ${r.msg}`, ok: r.ok });
+    }
+  }
+
+  const box = document.getElementById("debug-box");
+  const linesEl = document.getElementById("debug-lines");
+  box.classList.remove("hidden");
+  linesEl.innerHTML = lines.map(l=>`<div class="debug-line" style="color:${l.ok?"#2a9d8f":"#e63946"}">${l.text}</div>`).join("");
+
+  const allOk = lines.every(l=>l.ok);
+  if (allOk) showToast("✅ All emails sent successfully!");
+  else showToast("❌ Some failed — see debug log","warn");
+}
+
+// ── Auto daily reminders ──────────────────────────────────────────────────────
+async function checkReminders() {
+  const today = new Date().toISOString().slice(0,10);
+  let sent = 0;
+  for (const task of tasks.filter(t=>!t.done)) {
+    const key = `${task.id}_${today}`;
+    if (remLog[key]) continue;
+    const age = daysSince(task.createdAt);
+    if (age < 1) continue;
+    for (const m of members) {
+      await sendEmail(m.email, m.name, {
+        subject: `⏰ Reminder: "${task.title}" is still pending`,
+        message: `This task has been open for ${age} day(s).\n\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
+        added_by: task.addedBy,
+      });
+      sent++;
+    }
+    remLog[key] = true;
+  }
+  if (sent > 0) { persist(); showToast(`📬 Sent ${sent} auto reminder(s)`,"info"); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderTasks();
+renderMembers();
+checkReminders();
+setInterval(checkReminders, 3600000);
+</script>
+</body>
+</html>
