@@ -160,6 +160,21 @@
     }
     input::placeholder, textarea::placeholder { color: var(--muted); }
     textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+    select {
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238A8A8A' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; background-size: 10px;
+      padding-right: 36px;
+    }
+    .field-label { display: block; font-size: 12px; color: var(--muted); margin: 4px 2px 6px; font-weight: 500; }
+    .assignee-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 500;
+      background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--line);
+    }
+    .assignee-pill .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
 
     /* ─── Priority selector ─── */
     .priority-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 12px; }
@@ -322,8 +337,12 @@
         <button onclick="setPriority('Normal',this)">Normal</button>
         <button onclick="setPriority('Low',this)">Low</button>
       </div>
+      <label class="field-label" for="f-assignee">Assign to</label>
+      <select id="f-assignee">
+        <option value="">— Select a family member —</option>
+      </select>
       <input type="text" id="f-addedby" placeholder="Your name" />
-      <button class="submit-btn" onclick="addTask()">Add task &amp; notify family</button>
+      <button class="submit-btn" onclick="addTask()">Add task &amp; notify assignee</button>
     </div>
 
     <div class="task-list" id="task-list"></div>
@@ -504,6 +523,24 @@ async function notifyAll(subject, message, addedBy) {
   return results;
 }
 
+async function notifyOne(member, subject, message, addedBy) {
+  const r = await sendEmail(member.email, member.name, { subject, message, added_by: addedBy });
+  return [{ name: member.name, ...r }];
+}
+
+function memberById(id) {
+  return members.find(m => m.id === id) || null;
+}
+
+function populateAssigneeSelect() {
+  const sel = document.getElementById("f-assignee");
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Select a family member —</option>' +
+    members.map(m => `<option value="${m.id}">${escapeHtml(m.name)} (${escapeHtml(m.email)})</option>`).join("");
+  if (current && memberById(current)) sel.value = current;
+}
+
 // ── Views ────────────────────────────────────────────────────────────────────
 function switchView(v) {
   ["tasks","members","settings"].forEach(name => {
@@ -521,7 +558,8 @@ function switchView(v) {
 function toggleForm() {
   formOpen = !formOpen;
   document.getElementById("task-form").classList.toggle("hidden", !formOpen);
-  document.querySelector(".add-btn").textContent = formOpen ? "✕ Cancel" : "+ Add New Task";
+  document.querySelector(".add-btn").textContent = formOpen ? "✕ Cancel" : "+ Add new task";
+  if (formOpen) populateAssigneeSelect();
 }
 
 let selectedPriorityBtn = null;
@@ -534,32 +572,38 @@ function setPriority(p, btn) {
 }
 
 async function addTask() {
-  const title   = document.getElementById("f-title").value.trim();
-  const desc    = document.getElementById("f-desc").value.trim();
-  const addedBy = document.getElementById("f-addedby").value.trim();
+  const title      = document.getElementById("f-title").value.trim();
+  const desc       = document.getElementById("f-desc").value.trim();
+  const addedBy    = document.getElementById("f-addedby").value.trim();
+  const assigneeId = document.getElementById("f-assignee").value;
   if (!title || !addedBy) { showToast("⚠️ Title and your name are required","warn"); return; }
+  if (members.length > 0 && !assigneeId) { showToast("⚠️ Pick a family member to assign this task to","warn"); return; }
 
   const task = { id: genId(), title, desc, priority: currentPriority,
-    addedBy, createdAt: new Date().toISOString(), done: false, doneAt: null };
+    addedBy, assigneeId: assigneeId || null,
+    createdAt: new Date().toISOString(), done: false, doneAt: null };
   tasks.unshift(task);
   persist();
 
   document.getElementById("f-title").value="";
   document.getElementById("f-desc").value="";
   document.getElementById("f-addedby").value="";
+  document.getElementById("f-assignee").value="";
   toggleForm();
   renderTasks();
 
-  if (members.length > 0) {
-    showToast("📤 Notifying family…","info");
-    const results = await notifyAll(
+  const assignee = assigneeId ? memberById(assigneeId) : null;
+  if (assignee) {
+    showToast(`📤 Notifying ${assignee.name}…`,"info");
+    const results = await notifyOne(
+      assignee,
       `📋 New Task: "${task.title}"`,
-      `${task.addedBy} added a new task.\n\nTask: ${task.title}\nPriority: ${task.priority}${task.desc?"\nDetails: "+task.desc:""}`,
+      `${task.addedBy} assigned you a task.\n\nTask: ${task.title}\nPriority: ${task.priority}${task.desc?"\nDetails: "+task.desc:""}`,
       task.addedBy
     );
     const failed = results.filter(r=>!r.ok);
-    if (failed.length===0) showToast("✅ All family members notified!");
-    else showToast(`❌ Failed for ${failed.length}/${results.length}:\n` + failed.map(r=>`• ${r.name} (HTTP ${r.status}): ${r.msg}`).join("\n") + "\n\nFix keys in Settings.", "warn");
+    if (failed.length===0) showToast(`✅ ${assignee.name} notified`);
+    else showToast(`❌ Failed to email ${assignee.name} (HTTP ${failed[0].status}):\n${failed[0].msg}\n\nFix keys in Settings.`, "warn");
   } else {
     showToast("✅ Task added (add members to enable notifications)");
   }
@@ -572,13 +616,17 @@ async function toggleDone(id) {
   task.doneAt = task.done ? new Date().toISOString() : null;
   persist();
   renderTasks();
-  if (!wasDone && members.length > 0) {
-    await notifyAll(
-      `✅ Task Completed: "${task.title}"`,
-      `"${task.title}" has been marked as done.\n\nAdded by: ${task.addedBy}\nCompleted: ${formatDate(new Date().toISOString())}`,
-      task.addedBy
-    );
-    showToast("✅ Task done — family notified!");
+  if (!wasDone) {
+    const assignee = task.assigneeId ? memberById(task.assigneeId) : null;
+    if (assignee) {
+      await notifyOne(
+        assignee,
+        `✅ Task Completed: "${task.title}"`,
+        `Your task "${task.title}" has been marked as done.\n\nAdded by: ${task.addedBy}\nCompleted: ${formatDate(new Date().toISOString())}`,
+        task.addedBy
+      );
+      showToast(`✅ Task done — ${assignee.name} notified`);
+    }
   }
 }
 
@@ -619,6 +667,10 @@ function renderTasks() {
     const p = PRIORITY_CONFIG[task.priority];
     const age = daysSince(task.createdAt);
     const ageStr = task.done ? `Done ${formatDate(task.doneAt)}` : age===0?"Today":`${age}d open`;
+    const assignee = task.assigneeId ? memberById(task.assigneeId) : null;
+    const assigneePill = assignee
+      ? `<span class="assignee-pill" title="${escapeHtml(assignee.email)}"><span class="dot"></span>${escapeHtml(assignee.name)}</span>`
+      : (task.assigneeId ? `<span class="assignee-pill" style="color:var(--urgent);border-color:var(--urgent-soft);background:var(--urgent-soft)">Removed member</span>` : "");
     return `
       <div class="task-card" style="opacity:${task.done?0.6:1};border-left-color:${p.dot}">
         <div class="task-top">
@@ -627,6 +679,7 @@ function renderTasks() {
               <span style="width:6px;height:6px;border-radius:50%;background:${p.dot};display:inline-block"></span>
               ${task.priority}
             </span>
+            ${assigneePill}
             <span class="task-age">${ageStr}</span>
           </div>
           <div class="task-actions">
@@ -693,14 +746,17 @@ async function sendTestReminders() {
   const lines = [];
   for (const task of pending) {
     const age = daysSince(task.createdAt);
-    for (const m of members) {
-      const r = await sendEmail(m.email, m.name, {
-        subject: `⏰ [TEST] Reminder: "${task.title}" is pending`,
-        message: `TEST REMINDER\n\nTask: ${task.title}\nOpen: ${age===0?"less than a day":age+" day(s)"}\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
-        added_by: task.addedBy,
-      });
-      lines.push({ text: `${m.name} (${m.email}): HTTP ${r.status} — ${escapeForLog(r.msg)}`, ok: r.ok });
+    const assignee = task.assigneeId ? memberById(task.assigneeId) : null;
+    if (!assignee) {
+      lines.push({ text: `"${task.title}" — skipped (no assignee)`, ok: false });
+      continue;
     }
+    const r = await sendEmail(assignee.email, assignee.name, {
+      subject: `⏰ [TEST] Reminder: "${task.title}" is pending`,
+      message: `TEST REMINDER\n\nTask: ${task.title}\nOpen: ${age===0?"less than a day":age+" day(s)"}\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
+      added_by: task.addedBy,
+    });
+    lines.push({ text: `"${task.title}" → ${assignee.name} (${assignee.email}): HTTP ${r.status} — ${escapeForLog(r.msg)}`, ok: r.ok });
   }
 
   const box = document.getElementById("debug-box");
@@ -722,14 +778,14 @@ async function checkReminders() {
     if (remLog[key]) continue;
     const age = daysSince(task.createdAt);
     if (age < 1) continue;
-    for (const m of members) {
-      await sendEmail(m.email, m.name, {
-        subject: `⏰ Reminder: "${task.title}" is still pending`,
-        message: `This task has been open for ${age} day(s).\n\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
-        added_by: task.addedBy,
-      });
-      sent++;
-    }
+    const assignee = task.assigneeId ? memberById(task.assigneeId) : null;
+    if (!assignee) continue;
+    await sendEmail(assignee.email, assignee.name, {
+      subject: `⏰ Reminder: "${task.title}" is still pending`,
+      message: `This task has been open for ${age} day(s).\n\nPriority: ${task.priority}\n${task.desc?"Details: "+task.desc:""}`,
+      added_by: task.addedBy,
+    });
+    sent++;
     remLog[key] = true;
   }
   if (sent > 0) { persist(); showToast(`📬 Sent ${sent} auto reminder(s)`,"info"); }
