@@ -1,6 +1,6 @@
 # Family Hub
 
-Lightweight household task tracker with email notifications via **Resend**. Tasks and members are stored in `localStorage` on each device.
+Lightweight household task tracker with email notifications via **EmailJS**. Tasks and members are stored in `localStorage` per device.
 
 ## Features
 
@@ -8,29 +8,28 @@ Lightweight household task tracker with email notifications via **Resend**. Task
 - Filter by status or priority
 - Email notifications on new task, task done, and daily reminders for stale tasks
 - Auto-reminders fire hourly while the page is open (once per day per task, after 1 day open)
-- Settings tab with editable Resend config + connectivity-test button
+- Settings tab with editable EmailJS config + connectivity-test button
+- Pure static site — works from any host (Vercel, Netlify, GitHub Pages, or just opened locally)
 
-## Deploy (Vercel)
+## Setup (60 seconds)
 
-1. Push this repo to GitHub (already at https://github.com/KrishJainn/HouseReminderApp)
-2. Import at https://vercel.com/new → pick the repo → **Deploy**
-3. In Vercel project → **Settings → Environment Variables**, add:
-   - `RESEND_API_KEY` = your Resend API key (from https://resend.com/api-keys)
-4. Redeploy
-5. Visit the live URL → **Settings** tab → enter From name / From email / Test recipient → **Send Connectivity Test**
+1. Create an account at https://www.emailjs.com (free tier: 200 emails/month, no domain needed)
+2. **Add an Email Service** (e.g. Gmail) — copy the **Service ID** (`service_xxxxxxx`)
+3. **Create a Template** with:
+   - **To Email:** `{{to_email}}`
+   - **Subject:** `{{subject}}`
+   - **Content:**
+     ```
+     Hi {{to_name}},
 
-### Alternative: API key in browser
+     {{message}}
 
-If you don't want to set the env var, just paste the API key into the Settings tab. It's saved in your browser's localStorage and sent to this app's own `/api/send` proxy. The proxy uses the env var if set, otherwise falls back to the key from the request.
+     — Added by {{added_by}}
+     ```
+   - Copy the **Template ID** (`template_xxxxxxx`)
+4. **Account → API Keys** → copy your **Public Key**
+5. Open the app → **Settings** → paste all three → **Save config** → **Send connectivity test**
 
-## Sender domain
+## Deploy
 
-By default emails come from `onboarding@resend.dev`, which Resend only delivers to the email on your Resend account (good for testing). To send to anyone, verify a domain at https://resend.com/domains and use that as the **From email** in Settings.
-
-## Local dev
-
-```
-npx vercel dev
-```
-
-Opening `index.html` from `file://` won't work — the `/api/send` proxy requires a server.
+Static site — drop on any host. Already on GitHub at https://github.com/KrishJainn/HouseReminderApp; import at https://vercel.com/new for an auto-deploying live URL.
