@@ -5,111 +5,284 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Family Hub</title>
   <style>
+    :root {
+      --bg: #FAF8F4;
+      --surface: #FFFFFF;
+      --surface-2: #F4F1EC;
+      --ink: #1A1A1A;
+      --ink-2: #4A4A4A;
+      --muted: #8A8A8A;
+      --line: #ECE7DF;
+      --line-2: #E1DBD0;
+      --accent: #DC4A2C;
+      --accent-soft: #FBE9E2;
+      --urgent: #DC2626;
+      --urgent-soft: #FEE2E2;
+      --normal: #D97706;
+      --normal-soft: #FEF3C7;
+      --low: #059669;
+      --low-soft: #D1FAE5;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 2px rgba(20,20,20,0.04);
+      --shadow: 0 2px 6px rgba(20,20,20,0.05), 0 1px 2px rgba(20,20,20,0.03);
+      --shadow-lg: 0 10px 30px rgba(20,20,20,0.08), 0 2px 6px rgba(20,20,20,0.04);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0F0E0C;
+        --surface: #1A1815;
+        --surface-2: #232017;
+        --ink: #F5F2ED;
+        --ink-2: #C9C3B8;
+        --muted: #8B847A;
+        --line: #2B2823;
+        --line-2: #3A3630;
+        --accent: #E66B4F;
+        --accent-soft: #3D241D;
+        --urgent: #F87171;
+        --urgent-soft: #3D1F1F;
+        --normal: #F59E0B;
+        --normal-soft: #3D2D11;
+        --low: #34D399;
+        --low-soft: #1A3327;
+      }
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Georgia', serif; background: #f2ede8; color: #264653; min-height: 100vh; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg); color: var(--ink); min-height: 100vh;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: 'cv11', 'ss01';
+      line-height: 1.5;
+    }
 
-    /* Grain */
-    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-      background-repeat: repeat; background-size: 200px; }
+    /* ─── Header ─── */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: saturate(180%) blur(14px);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #B83A1E);
+      display: grid; place-items: center; color: #fff; font-size: 18px;
+      box-shadow: var(--shadow);
+    }
+    .logo-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+    .logo-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
 
-    header { position: sticky; top: 0; z-index: 10; background: #264653; padding: 14px 20px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-      box-shadow: 0 2px 16px rgba(38,70,83,0.2); }
-    .logo { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { font-size: 28px; }
-    .logo-title { font-size: 20px; font-weight: 700; color: #e9c46a; }
-    .logo-sub { font-size: 11px; color: #a8dadc; margin-top: 2px; }
-    nav { display: flex; gap: 6px; flex-wrap: wrap; }
-    nav button { padding: 6px 13px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.15);
-      background: transparent; color: #a8dadc; cursor: pointer; font-size: 13px; font-family: inherit; }
-    nav button.active { background: #e9c46a; color: #264653; border-color: #e9c46a; font-weight: 700; }
+    nav { display: flex; gap: 2px; padding: 4px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--line); }
+    nav button {
+      padding: 7px 14px; border-radius: 8px; border: none;
+      background: transparent; color: var(--ink-2); cursor: pointer;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    nav button:hover { color: var(--ink); }
+    nav button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 
-    main { max-width: 700px; margin: 0 auto; padding: 20px 16px 60px; position: relative; z-index: 1; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 24px 80px; }
 
-    .toast { position: fixed; top: 70px; right: 16px; z-index: 100; padding: 12px 18px;
-      border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 380px; display: none;
-      white-space: pre-wrap; word-break: break-word; }
-    .toast .close { float: right; margin-left: 10px; cursor: pointer; opacity: 0.8; }
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed; top: 80px; right: 20px; z-index: 100;
+      padding: 14px 18px; padding-right: 40px;
+      border-radius: 12px; background: var(--surface); color: var(--ink);
+      border: 1px solid var(--line); box-shadow: var(--shadow-lg);
+      font-size: 13.5px; font-weight: 500; max-width: 400px; display: none;
+      white-space: pre-wrap; word-break: break-word; line-height: 1.45;
+    }
+    .toast.toast-warn  { border-color: var(--urgent); background: var(--urgent-soft); color: var(--urgent); }
+    .toast.toast-info  { border-color: #93C5FD; background: #EFF6FF; color: #1D4ED8; }
+    .toast.toast-ok    { border-color: var(--low); background: var(--low-soft); color: var(--low); }
+    .toast .close {
+      position: absolute; top: 10px; right: 12px;
+      width: 22px; height: 22px; border-radius: 6px;
+      display: grid; place-items: center; cursor: pointer; opacity: 0.6; font-size: 12px;
+    }
+    .toast .close:hover { opacity: 1; background: rgba(0,0,0,0.06); }
 
-    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 18px; }
-    .stat { background: #fff; border-radius: 12px; padding: 12px 8px; text-align: center;
-      box-shadow: 0 2px 8px rgba(38,70,83,0.07); }
-    .stat-val { font-size: 26px; font-weight: 800; line-height: 1; }
-    .stat-label { font-size: 10px; color: #7a9aaa; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    /* ─── Stats ─── */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 16px 14px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stat:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+    .stat-val { font-size: 28px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+    .stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; font-weight: 500; letter-spacing: 0.02em; }
 
-    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-    .filter-bar button { padding: 5px 12px; border-radius: 16px; border: 1.5px solid #c8d8dd;
-      background: #fff; color: #4a7a8a; cursor: pointer; font-size: 12px; font-family: inherit; }
-    .filter-bar button.active { background: #264653; color: #e9c46a; border-color: #264653; font-weight: 700; }
+    /* ─── Filter bar ─── */
+    .filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+    .filter-bar button {
+      padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--ink-2); cursor: pointer;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .filter-bar button:hover { border-color: var(--line-2); color: var(--ink); }
+    .filter-bar button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-    .add-btn { display: block; width: 100%; padding: 13px; background: #e76f51; color: #fff;
-      border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer;
-      margin-bottom: 14px; font-family: inherit; box-shadow: 0 4px 12px rgba(231,111,81,0.3); }
+    /* ─── Primary CTA (add task) ─── */
+    .add-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px; background: var(--accent); color: #fff;
+      border: none; border-radius: var(--radius); font-size: 14.5px; font-weight: 600;
+      cursor: pointer; margin-bottom: 18px; font-family: inherit;
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+      transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+    .add-btn:hover  { background: color-mix(in srgb, var(--accent) 92%, black); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); }
+    .add-btn:active { transform: translateY(1px); }
 
-    .card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 4px 16px rgba(38,70,83,0.08); margin-bottom: 16px; }
-    .card-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #264653; }
+    /* ─── Cards / forms ─── */
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; }
+    .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--ink); letter-spacing: -0.005em; }
 
-    input, textarea, select { display: block; width: 100%; padding: 10px 13px; border-radius: 10px;
-      border: 1.5px solid #d6e0e5; font-size: 14px; font-family: inherit; margin-bottom: 10px;
-      outline: none; background: #f8fafb; color: #264653; }
-    textarea { min-height: 70px; resize: vertical; }
+    input, textarea, select {
+      display: block; width: 100%; padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 1px solid var(--line-2); font-size: 14px; font-family: inherit;
+      margin-bottom: 10px; outline: none; background: var(--surface); color: var(--ink);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 
-    .priority-row { display: flex; gap: 6px; margin-bottom: 10px; }
-    .priority-row button { flex: 1; padding: 8px; border-radius: 10px; border: 2px solid #e0e8ec;
-      background: #f8fafb; cursor: pointer; font-size: 13px; font-family: inherit; }
-    .priority-row button.active-urgent { background: #fff0f1; border-color: #e63946; color: #e63946; font-weight: 700; }
-    .priority-row button.active-normal { background: #fff8f0; border-color: #f4a261; color: #f4a261; font-weight: 700; }
-    .priority-row button.active-low    { background: #f0faf9; border-color: #2a9d8f; color: #2a9d8f; font-weight: 700; }
+    /* ─── Priority selector ─── */
+    .priority-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 12px; }
+    .priority-row button {
+      padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--line-2);
+      background: var(--surface); color: var(--ink-2); cursor: pointer;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .priority-row button:hover { border-color: var(--muted); }
+    .priority-row button.active-urgent { background: var(--urgent-soft); border-color: var(--urgent); color: var(--urgent); font-weight: 600; }
+    .priority-row button.active-normal { background: var(--normal-soft); border-color: var(--normal); color: var(--normal); font-weight: 600; }
+    .priority-row button.active-low    { background: var(--low-soft);    border-color: var(--low);    color: var(--low);    font-weight: 600; }
 
-    .submit-btn { display: block; width: 100%; padding: 12px; background: #264653; color: #e9c46a;
-      border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .submit-btn {
+      display: block; width: 100%; padding: 12px; background: var(--ink); color: var(--bg);
+      border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s ease;
+    }
+    .submit-btn:hover { opacity: 0.9; }
 
+    /* ─── Task list ─── */
     .task-list { display: flex; flex-direction: column; gap: 10px; }
-    .task-card { background: #fff; border-radius: 12px; padding: 14px 16px;
-      box-shadow: 0 2px 10px rgba(38,70,83,0.07); border-left: 4px solid #ccc; }
-    .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .task-meta { display: flex; gap: 8px; align-items: center; }
-    .badge { padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-    .task-age { font-size: 11px; color: #9ab0b8; }
-    .task-actions { display: flex; gap: 5px; }
-    .icon-btn { width: 30px; height: 30px; border-radius: 8px; border: none; cursor: pointer;
-      font-size: 15px; display: flex; align-items: center; justify-content: center; color: #264653; }
-    .task-title { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
-    .task-desc { font-size: 13px; color: #4a7a8a; margin-bottom: 6px; line-height: 1.5; }
-    .task-footer { font-size: 11px; color: #9ab0b8; }
+    .task-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 16px 18px;
+      border-left-width: 3px; position: relative;
+      transition: transform 0.12s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .task-card:hover { box-shadow: var(--shadow); border-color: var(--line-2); }
+    .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 12px; }
+    .task-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .badge {
+      padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .task-age { font-size: 12px; color: var(--muted); }
+    .task-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line);
+      cursor: pointer; font-size: 13px;
+      display: grid; place-items: center; color: var(--ink-2); background: var(--surface);
+      transition: all 0.15s ease;
+    }
+    .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+    .icon-btn.danger:hover  { background: var(--urgent-soft); color: var(--urgent); border-color: var(--urgent); }
+    .icon-btn.success:hover { background: var(--low-soft); color: var(--low); border-color: var(--low); }
+    .task-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--ink); letter-spacing: -0.005em; }
+    .task-desc { font-size: 13.5px; color: var(--ink-2); margin-bottom: 8px; line-height: 1.55; }
+    .task-footer { font-size: 12px; color: var(--muted); }
 
-    .member-row { display: flex; align-items: center; justify-content: space-between;
-      background: #fff; border-radius: 12px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(38,70,83,0.07); margin-bottom: 8px; }
+    /* ─── Members ─── */
+    .member-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 14px 18px; margin-bottom: 8px;
+    }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 999px;
+      display: grid; place-items: center;
+      background: var(--surface-2); color: var(--ink); font-weight: 600; font-size: 14px;
+      border: 1px solid var(--line);
+    }
+    .member-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+    .member-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .member-name { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+    .member-email { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
 
-    .section-title { font-size: 19px; font-weight: 800; margin-bottom: 12px; color: #264653; }
-    .help-text { font-size: 13px; color: #4a7a8a; line-height: 1.8; margin-bottom: 10px; }
-    .empty { text-align: center; color: #9ab0b8; padding: 40px 0; font-size: 14px; }
+    /* ─── Section titles + misc ─── */
+    .section-title {
+      font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .page-title { font-size: 26px; font-weight: 600; margin-bottom: 8px; color: var(--ink); letter-spacing: -0.02em; }
+    .page-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .help-text { font-size: 13px; color: var(--ink-2); line-height: 1.6; margin-bottom: 14px; }
+    .help-text a { color: var(--accent); text-decoration: none; }
+    .help-text a:hover { text-decoration: underline; }
+    .help-text code {
+      font-family: 'SF Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px; padding: 1px 6px; background: var(--surface-2); border-radius: 4px; border: 1px solid var(--line);
+    }
+    .empty {
+      text-align: center; color: var(--muted); padding: 56px 24px; font-size: 14px;
+      background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--radius);
+    }
 
-    .debug-box { margin-top: 14px; background: #f8fafb; border-radius: 10px; padding: 14px; border: 1px solid #e0e8ec; }
-    .debug-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-    .debug-line { font-size: 11px; font-family: monospace; margin-bottom: 4px; word-break: break-all; }
+    .debug-box { margin-top: 14px; background: var(--surface-2); border-radius: var(--radius-sm); padding: 14px; border: 1px solid var(--line); }
+    .debug-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--ink-2); }
+    .debug-line {
+      font-size: 11.5px; font-family: 'SF Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+      margin-bottom: 4px; word-break: break-all; line-height: 1.5;
+    }
 
-    footer { text-align: center; padding: 16px; font-size: 11px; color: #9ab0b8; position: relative; z-index: 1; }
+    footer { text-align: center; padding: 24px; font-size: 11.5px; color: var(--muted); }
 
     .hidden { display: none !important; }
+
+    @media (max-width: 520px) {
+      main { padding: 20px 16px 60px; }
+      header { padding: 12px 16px; }
+      nav { width: 100%; justify-content: space-between; }
+      nav button { flex: 1; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .page-title { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <span class="logo-icon">🏠</span>
+    <div class="logo-mark">⌂</div>
     <div>
       <div class="logo-title">Family Hub</div>
       <div class="logo-sub" id="header-sub">0 members · 0 pending</div>
     </div>
   </div>
   <nav>
-    <button class="active" onclick="switchView('tasks')">📋 Tasks</button>
-    <button onclick="switchView('members')">👨‍👩‍👧 Members</button>
-    <button onclick="switchView('settings')">⚙️ Settings</button>
+    <button class="active" onclick="switchView('tasks')">Tasks</button>
+    <button onclick="switchView('members')">Members</button>
+    <button onclick="switchView('settings')">Settings</button>
   </nav>
 </header>
 
@@ -119,35 +292,38 @@
 
   <!-- TASKS VIEW -->
   <div id="view-tasks">
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-sub">What needs doing around the house.</p>
+
     <div class="stats-row">
-      <div class="stat"><div class="stat-val" id="stat-total" style="color:#264653">0</div><div class="stat-label">Total</div></div>
-      <div class="stat"><div class="stat-val" id="stat-pending" style="color:#e76f51">0</div><div class="stat-label">Pending</div></div>
-      <div class="stat"><div class="stat-val" id="stat-urgent" style="color:#e63946">0</div><div class="stat-label">Urgent</div></div>
-      <div class="stat"><div class="stat-val" id="stat-done" style="color:#2a9d8f">0</div><div class="stat-label">Done</div></div>
+      <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-val" id="stat-pending" style="color:var(--accent)">0</div><div class="stat-label">Pending</div></div>
+      <div class="stat"><div class="stat-val" id="stat-urgent" style="color:var(--urgent)">0</div><div class="stat-label">Urgent</div></div>
+      <div class="stat"><div class="stat-val" id="stat-done" style="color:var(--low)">0</div><div class="stat-label">Done</div></div>
     </div>
 
     <div class="filter-bar">
       <button class="active" onclick="setFilter('all',this)">All</button>
-      <button onclick="setFilter('pending',this)">⏳ Pending</button>
-      <button onclick="setFilter('done',this)">✅ Done</button>
-      <button onclick="setFilter('Urgent',this)">🔴 Urgent</button>
-      <button onclick="setFilter('Normal',this)">🟡 Normal</button>
-      <button onclick="setFilter('Low',this)">🟢 Low</button>
+      <button onclick="setFilter('pending',this)">Pending</button>
+      <button onclick="setFilter('done',this)">Done</button>
+      <button onclick="setFilter('Urgent',this)">Urgent</button>
+      <button onclick="setFilter('Normal',this)">Normal</button>
+      <button onclick="setFilter('Low',this)">Low</button>
     </div>
 
-    <button class="add-btn" onclick="toggleForm()">+ Add New Task</button>
+    <button class="add-btn" onclick="toggleForm()"><span style="font-size:16px;line-height:1">+</span> Add new task</button>
 
     <div class="card hidden" id="task-form">
-      <div class="card-title">New Task</div>
-      <input type="text" id="f-title" placeholder="Task title *" />
-      <textarea id="f-desc" placeholder="Description (optional)"></textarea>
+      <div class="card-title">New task</div>
+      <input type="text" id="f-title" placeholder="What needs doing?" />
+      <textarea id="f-desc" placeholder="Details (optional)"></textarea>
       <div class="priority-row">
-        <button class="active-urgent" onclick="setPriority('Urgent',this)">🔴 Urgent</button>
-        <button onclick="setPriority('Normal',this)">🟡 Normal</button>
-        <button onclick="setPriority('Low',this)">🟢 Low</button>
+        <button class="active-urgent" onclick="setPriority('Urgent',this)">Urgent</button>
+        <button onclick="setPriority('Normal',this)">Normal</button>
+        <button onclick="setPriority('Low',this)">Low</button>
       </div>
-      <input type="text" id="f-addedby" placeholder="Your name *" />
-      <button class="submit-btn" onclick="addTask()">Submit Task & Notify Family</button>
+      <input type="text" id="f-addedby" placeholder="Your name" />
+      <button class="submit-btn" onclick="addTask()">Add task &amp; notify family</button>
     </div>
 
     <div class="task-list" id="task-list"></div>
@@ -155,47 +331,52 @@
 
   <!-- MEMBERS VIEW -->
   <div id="view-members" class="hidden">
-    <div class="section-title">Family Members</div>
+    <h1 class="page-title">Members</h1>
+    <p class="page-sub">Who gets notified about new and overdue tasks.</p>
+
     <div class="card">
-      <div class="card-title">Add Member</div>
+      <div class="card-title">Add member</div>
       <input type="text" id="m-name" placeholder="Full name" />
       <input type="email" id="m-email" placeholder="Email address" />
-      <button class="submit-btn" onclick="addMember()">Add Member</button>
+      <button class="submit-btn" onclick="addMember()">Add member</button>
     </div>
     <div id="member-list"></div>
   </div>
 
   <!-- SETTINGS VIEW -->
   <div id="view-settings" class="hidden">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-sub">Configure email delivery and run diagnostics.</p>
+
     <div class="section-title">Resend Config</div>
     <div class="card">
-      <p class="help-text">Paste your Resend API key from <a href="https://resend.com/api-keys" target="_blank" style="color:#e76f51">resend.com/api-keys</a>. The API key is saved in your browser and sent only to this app's own /api/send proxy. For arbitrary recipients, verify a domain at <a href="https://resend.com/domains" target="_blank" style="color:#e76f51">resend.com/domains</a> and use that as the "From" address. Without a verified domain, Resend only delivers to the email on your Resend account.</p>
+      <p class="help-text">Paste your Resend API key from <a href="https://resend.com/api-keys" target="_blank">resend.com/api-keys</a>. Saved in your browser and sent only to this app's <code>/api/send</code> proxy. For arbitrary recipients, verify a domain at <a href="https://resend.com/domains" target="_blank">resend.com/domains</a> and use it as the From address. Without a verified domain, Resend only delivers to the email on your Resend account.</p>
       <input type="password" id="cfg-apikey" placeholder="Resend API Key (re_xxxxxxxxxxxx)" autocomplete="off" />
       <input type="text"  id="cfg-fromname"  placeholder="From name (e.g. Family Hub)" />
       <input type="email" id="cfg-fromemail" placeholder="From email (default: onboarding@resend.dev)" />
-      <button class="submit-btn" onclick="saveConfig()">Save Config</button>
+      <button class="submit-btn" onclick="saveConfig()">Save config</button>
     </div>
 
-    <div class="section-title">Connectivity Test</div>
+    <div class="section-title">Connectivity test</div>
     <div class="card">
-      <p class="help-text">Sends one email to the address below via Resend. Shows the full response.</p>
+      <p class="help-text">Sends one email to verify delivery. Shows the full response.</p>
       <input type="email" id="cfg-testaddr" placeholder="Test recipient (e.g. krish.modernite@gmail.com)" />
-      <button class="submit-btn" onclick="sendConnectivityTest()">📡 Send Connectivity Test</button>
+      <button class="submit-btn" onclick="sendConnectivityTest()">Send connectivity test</button>
     </div>
 
-    <div class="section-title">Test Reminders</div>
+    <div class="section-title">Test reminders</div>
     <div class="card">
-      <p class="help-text">Sends to all members for all pending tasks right now. Shows exact response from EmailJS.</p>
-      <button class="submit-btn" onclick="sendTestReminders()">🔔 Send Test Reminder Emails Now</button>
+      <p class="help-text">Sends to all members for all pending tasks right now. Shows the response per recipient.</p>
+      <button class="submit-btn" onclick="sendTestReminders()">Send test reminder emails now</button>
       <div class="debug-box hidden" id="debug-box">
-        <div class="debug-title">📋 Debug Log</div>
+        <div class="debug-title">Debug log</div>
         <div id="debug-lines"></div>
       </div>
     </div>
 
-    <div class="section-title">Auto Reminder Logic</div>
+    <div class="section-title">Auto reminders</div>
     <div class="card">
-      <p class="help-text">Auto reminders fire for tasks older than 1 day, once per day. They run every hour while this page is open.</p>
+      <p class="help-text">Auto-reminders fire for tasks older than 1 day, once per day. They run every hour while this page is open.</p>
     </div>
   </div>
 
@@ -215,9 +396,9 @@ let config = { ...DEFAULT_CONFIG, ...(JSON.parse(localStorage.getItem("fh_config
 const SEND_ENDPOINT = "/api/send";
 
 const PRIORITY_CONFIG = {
-  Urgent: { color: "#e63946", bg: "#fff0f1", icon: "🔴" },
-  Normal: { color: "#f4a261", bg: "#fff8f0", icon: "🟡" },
-  Low:    { color: "#2a9d8f", bg: "#f0faf9", icon: "🟢" },
+  Urgent: { color: "var(--urgent)", bg: "var(--urgent-soft)", dot: "#DC2626" },
+  Normal: { color: "var(--normal)", bg: "var(--normal-soft)", dot: "#D97706" },
+  Low:    { color: "var(--low)",    bg: "var(--low-soft)",    dot: "#059669" },
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -261,8 +442,9 @@ function formatDate(d) { return new Date(d).toLocaleDateString("en-GB",{day:"num
 let toastTimer;
 function showToast(msg, type="success") {
   const t = document.getElementById("toast");
+  const cls = type==="warn" ? "toast-warn" : type==="info" ? "toast-info" : "toast-ok";
+  t.className = "toast " + cls;
   t.innerHTML = `<span class="close" onclick="document.getElementById('toast').style.display='none'">✕</span>${msg.replace(/&/g,"&amp;").replace(/</g,"&lt;")}`;
-  t.style.background = type==="warn"?"#e76f51":type==="info"?"#457b9d":"#2a9d8f";
   t.style.display = "block";
   clearTimeout(toastTimer);
   const duration = type==="warn" ? 14000 : 5000;
@@ -442,22 +624,23 @@ function renderTasks() {
     const age = daysSince(task.createdAt);
     const ageStr = task.done ? `Done ${formatDate(task.doneAt)}` : age===0?"Today":`${age}d open`;
     return `
-      <div class="task-card" style="opacity:${task.done?0.65:1};border-left-color:${p.color}">
+      <div class="task-card" style="opacity:${task.done?0.6:1};border-left-color:${p.dot}">
         <div class="task-top">
           <div class="task-meta">
-            <span class="badge" style="background:${p.bg};color:${p.color}">${p.icon} ${task.priority}</span>
+            <span class="badge" style="background:${p.bg};color:${p.color}">
+              <span style="width:6px;height:6px;border-radius:50%;background:${p.dot};display:inline-block"></span>
+              ${task.priority}
+            </span>
             <span class="task-age">${ageStr}</span>
           </div>
           <div class="task-actions">
-            <button class="icon-btn" style="background:${task.done?"#fff0f1":"#f0faf9"}"
-              onclick="toggleDone('${task.id}')">${task.done?"↩":"✓"}</button>
-            <button class="icon-btn" style="background:#fff0f1;color:#e63946"
-              onclick="deleteTask('${task.id}')">✕</button>
+            <button class="icon-btn ${task.done?"":"success"}" title="${task.done?"Undo":"Mark done"}" onclick="toggleDone('${task.id}')">${task.done?"↺":"✓"}</button>
+            <button class="icon-btn danger" title="Delete" onclick="deleteTask('${task.id}')">✕</button>
           </div>
         </div>
-        <div class="task-title" style="text-decoration:${task.done?"line-through":"none"}">${task.title}</div>
-        ${task.desc?`<div class="task-desc">${task.desc}</div>`:""}
-        <div class="task-footer">Added by <b>${task.addedBy}</b> · ${formatDate(task.createdAt)}</div>
+        <div class="task-title" style="text-decoration:${task.done?"line-through":"none"}">${escapeHtml(task.title)}</div>
+        ${task.desc?`<div class="task-desc">${escapeHtml(task.desc)}</div>`:""}
+        <div class="task-footer">Added by <b>${escapeHtml(task.addedBy)}</b> · ${formatDate(task.createdAt)}</div>
       </div>`;
   }).join("");
 }
@@ -483,15 +666,25 @@ function deleteMember(id) {
 
 function renderMembers() {
   const list = document.getElementById("member-list");
-  if (members.length===0) { list.innerHTML='<div class="empty">No members yet.</div>'; return; }
-  list.innerHTML = members.map(m=>`
+  if (members.length===0) { list.innerHTML='<div class="empty">No members yet. Add someone above to start sending notifications.</div>'; return; }
+  list.innerHTML = members.map(m=>{
+    const initial = (m.name || "?").trim()[0]?.toUpperCase() || "?";
+    return `
     <div class="member-row">
-      <div>
-        <div class="task-title">${m.name}</div>
-        <div class="task-footer">${m.email}</div>
+      <div class="member-info">
+        <div class="avatar">${escapeHtml(initial)}</div>
+        <div class="member-meta">
+          <div class="member-name">${escapeHtml(m.name)}</div>
+          <div class="member-email">${escapeHtml(m.email)}</div>
+        </div>
       </div>
-      <button class="icon-btn" style="background:#fff0f1;color:#e63946" onclick="deleteMember('${m.id}')">✕</button>
-    </div>`).join("");
+      <button class="icon-btn danger" title="Remove" onclick="deleteMember('${m.id}')">✕</button>
+    </div>`;
+  }).join("");
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 // ── Test reminders ────────────────────────────────────────────────────────────
