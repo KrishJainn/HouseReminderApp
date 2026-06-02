@@ -29,7 +29,9 @@
 
     .toast { position: fixed; top: 70px; right: 16px; z-index: 100; padding: 12px 18px;
       border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 300px; display: none; }
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 380px; display: none;
+      white-space: pre-wrap; word-break: break-word; }
+    .toast .close { float: right; margin-left: 10px; cursor: pointer; opacity: 0.8; }
 
     .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 18px; }
     .stat { background: #fff; border-radius: 12px; padding: 12px 8px; text-align: center;
@@ -167,7 +169,18 @@
   <div id="view-settings" class="hidden">
     <div class="section-title">EmailJS Keys</div>
     <div class="card">
-      <p class="help-text">Your keys are saved in this app. Template must have <code>{{to_email}}</code> in the To field, and <code>{{to_name}}</code> <code>{{subject}}</code> <code>{{message}}</code> <code>{{added_by}}</code> in the body.</p>
+      <p class="help-text">Get these from <a href="https://dashboard.emailjs.com/admin" target="_blank" style="color:#e76f51">dashboard.emailjs.com</a>. Template must have <code>{{to_email}}</code> in the To field and <code>{{to_name}}</code> <code>{{subject}}</code> <code>{{message}}</code> <code>{{added_by}}</code> in the body.</p>
+      <input type="text" id="cfg-service"  placeholder="Service ID (service_xxxxxxx)" />
+      <input type="text" id="cfg-template" placeholder="Template ID (template_xxxxxxx)" />
+      <input type="text" id="cfg-public"   placeholder="Public Key" />
+      <button class="submit-btn" onclick="saveConfig()">Save Keys</button>
+    </div>
+
+    <div class="section-title">Connectivity Test</div>
+    <div class="card">
+      <p class="help-text">Sends one email to the address below to verify your EmailJS setup. Shows the full response.</p>
+      <input type="email" id="cfg-testaddr" placeholder="Test recipient (e.g. krish.modernite@gmail.com)" />
+      <button class="submit-btn" onclick="sendConnectivityTest()">📡 Send Connectivity Test</button>
     </div>
 
     <div class="section-title">Test Reminders</div>
@@ -191,10 +204,14 @@
 <footer>Family Hub · Data saved on this device</footer>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────────────
-const EMAILJS_SERVICE_ID  = "service_tnkv17r";
-const EMAILJS_TEMPLATE_ID = "template_7x7kjk0";
-const EMAILJS_PUBLIC_KEY  = "-uQhea5f5cg7mvnJG";
+// ── Config (editable in Settings, persisted to localStorage) ─────────────────
+const DEFAULT_CONFIG = {
+  serviceId:  "service_tnkv17r",
+  templateId: "template_7x7kjk0",
+  publicKey:  "-uQhea5f5cg7mvnJG",
+  testAddr:   "krish.modernite@gmail.com",
+};
+let config = { ...DEFAULT_CONFIG, ...(JSON.parse(localStorage.getItem("fh_config") || "{}")) };
 
 const PRIORITY_CONFIG = {
   Urgent: { color: "#e63946", bg: "#fff0f1", icon: "🔴" },
@@ -214,6 +231,25 @@ function persist() {
   localStorage.setItem("fh_tasks",   JSON.stringify(tasks));
   localStorage.setItem("fh_members", JSON.stringify(members));
   localStorage.setItem("fh_remlog",  JSON.stringify(remLog));
+  localStorage.setItem("fh_config",  JSON.stringify(config));
+}
+
+function saveConfig() {
+  const s = document.getElementById("cfg-service").value.trim();
+  const t = document.getElementById("cfg-template").value.trim();
+  const p = document.getElementById("cfg-public").value.trim();
+  const a = document.getElementById("cfg-testaddr").value.trim();
+  if (!s || !t || !p) { showToast("⚠️ All three keys are required","warn"); return; }
+  config = { serviceId: s, templateId: t, publicKey: p, testAddr: a || config.testAddr };
+  persist();
+  showToast("✅ Keys saved");
+}
+
+function loadConfigInputs() {
+  document.getElementById("cfg-service").value  = config.serviceId  || "";
+  document.getElementById("cfg-template").value = config.templateId || "";
+  document.getElementById("cfg-public").value   = config.publicKey  || "";
+  document.getElementById("cfg-testaddr").value = config.testAddr   || "";
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -225,11 +261,12 @@ function formatDate(d) { return new Date(d).toLocaleDateString("en-GB",{day:"num
 let toastTimer;
 function showToast(msg, type="success") {
   const t = document.getElementById("toast");
-  t.textContent = msg;
+  t.innerHTML = `<span class="close" onclick="document.getElementById('toast').style.display='none'">✕</span>${msg.replace(/&/g,"&amp;").replace(/</g,"&lt;")}`;
   t.style.background = type==="warn"?"#e76f51":type==="info"?"#457b9d":"#2a9d8f";
   t.style.display = "block";
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>{ t.style.display="none"; }, 5000);
+  const duration = type==="warn" ? 14000 : 5000;
+  toastTimer = setTimeout(()=>{ t.style.display="none"; }, duration);
 }
 
 // ── EmailJS ──────────────────────────────────────────────────────────────────
@@ -239,9 +276,9 @@ async function sendEmail(toEmail, toName, params) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        service_id: EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
-        user_id: EMAILJS_PUBLIC_KEY,
+        service_id: config.serviceId,
+        template_id: config.templateId,
+        user_id: config.publicKey,
         template_params: { to_email: toEmail, to_name: toName, ...params },
       }),
     });
@@ -250,6 +287,23 @@ async function sendEmail(toEmail, toName, params) {
   } catch(e) {
     return { ok: false, status: 0, msg: e.message };
   }
+}
+
+async function sendConnectivityTest() {
+  const addr = document.getElementById("cfg-testaddr").value.trim() || config.testAddr;
+  if (!addr) { showToast("⚠️ Enter a test email address first","warn"); return; }
+  showToast("📡 Sending test to " + addr + "…","info");
+  const r = await sendEmail(addr, addr.split("@")[0], {
+    subject: "✅ Family Hub — connectivity test",
+    message: "If you see this, your EmailJS service + template + public key are all working. Sent " + new Date().toLocaleString() + ".",
+    added_by: "Family Hub",
+  });
+  const box = document.getElementById("debug-box");
+  const linesEl = document.getElementById("debug-lines");
+  box.classList.remove("hidden");
+  linesEl.innerHTML = `<div class="debug-line" style="color:${r.ok?"#2a9d8f":"#e63946"}">${addr}: HTTP ${r.status} — ${r.msg}</div>`;
+  if (r.ok) showToast("✅ Sent! Check " + addr + " inbox.");
+  else showToast("❌ Failed (HTTP " + r.status + ")\n" + r.msg, "warn");
 }
 
 async function notifyAll(subject, message, addedBy) {
@@ -271,6 +325,7 @@ function switchView(v) {
   });
   if (v==="tasks") renderTasks();
   if (v==="members") renderMembers();
+  if (v==="settings") loadConfigInputs();
 }
 
 // ── Tasks ────────────────────────────────────────────────────────────────────
@@ -315,7 +370,7 @@ async function addTask() {
     );
     const failed = results.filter(r=>!r.ok);
     if (failed.length===0) showToast("✅ All family members notified!");
-    else showToast(`❌ Failed for: ${failed.map(r=>r.name+" ("+r.msg+")").join(", ")}`, "warn");
+    else showToast(`❌ Failed for ${failed.length}/${results.length}:\n` + failed.map(r=>`• ${r.name} (HTTP ${r.status}): ${r.msg}`).join("\n") + "\n\nFix keys in Settings.", "warn");
   } else {
     showToast("✅ Task added (add members to enable notifications)");
   }
